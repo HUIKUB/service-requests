@@ -16,7 +16,7 @@ jobs:
     - name: Extract service name from commit message
       id: extract
       run: |
-        SERVICE_NAME=$(echo "${{ github.event.head_commit.message }}" | sed 's/[^a-zA-Z0-9-_]//g')
+        SERVICE_NAME=$(echo "${{ github.event.head_commit.message }}" | sed 's/[^a-zA-Z0-9_-]//g')
         echo "SERVICE_NAME=$SERVICE_NAME" >> $GITHUB_OUTPUT
 
     - name: Create new service repository
