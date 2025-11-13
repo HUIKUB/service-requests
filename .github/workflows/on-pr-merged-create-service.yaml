@@ -1,51 +1,48 @@
 name: On PR Merged - Create Service
 
 on:
-    push:
-        branches:
-            - main
+  push:
+    branches:
+      - main
 
 jobs:
-    approve-and-deploy:
-        runs-on: ubuntu-latest
+  approve-and-deploy:
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout PR content
-              uses: actions/checkout@v2
+    steps:
+      - name: Checkout PR content
+        uses: actions/checkout@v2
 
-            - name: Authenticate with GitHub CLI
-              run: echo "${{ secrets.GH_PERSONAL_TOKEN }}" | gh auth login --with-token
-              env:
-                  GH_TOKEN: ${{ secrets.KEY_GITHUB_TOKEN }}
+      - name: Extract service name from commit message
+        id: extract
+        run: |
+          SERVICE_NAME=$(echo "${{ github.event.head_commit.message }}" | sed 's/[^a-zA-Z0-9_-]//g')
+          echo "SERVICE_NAME=$SERVICE_NAME" >> $GITHUB_OUTPUT
 
-            - name: Extract service name from commit message
-              id: extract
-              run: |
-                  SERVICE_NAME=$(echo "${{ github.event.head_commit.message }}" | sed 's/[^a-zA-Z0-9_-]//g')
-                  echo "SERVICE_NAME=$SERVICE_NAME" >> $GITHUB_OUTPUT
+      - name: Authenticate GitHub CLI (non-interactive)
+        run: |
+          mkdir -p ~/.config/gh
+          echo -e "hosts:\n  github.com:\n    oauth_token: ${{ secrets.GH_PERSONAL_TOKEN }}\n    git_protocol: https" > ~/.config/gh/hosts.yml
 
-            - name: Create new service repository
-              env:
-                  GH_TOKEN: ${{ secrets.KEY_GITHUB_TOKEN }}
-              run: |
-                  gh auth setup-git
-                  gh repo create HUIKUB/${{ steps.extract.outputs.SERVICE_NAME }} --public --confirm
+      - name: Create new service repository
+        run: |
+          gh repo create HUIKUB/${{ steps.extract.outputs.SERVICE_NAME }} --public --confirm
 
-            - name: Clone and populate new service
-              run: |
-                  git clone https://github.com/HUIKUB/${{ steps.extract.outputs.SERVICE_NAME }} ./new-service
-                  cp -r ./template/* ./new-service/
-                  cd ./new-service
-                  git config user.name "github-actions[bot]"
-                  git config user.email "github-actions[bot]@users.noreply.github.com"
-                  git add .
-                  git commit -m "Initial commit"
-                  git push
+      - name: Clone and populate new service
+        run: |
+          git clone https://github.com/HUIKUB/${{ steps.extract.outputs.SERVICE_NAME }} ./new-service
+          cp -r ./template/* ./new-service/
+          cd ./new-service
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Initial commit"
+          git push
 
-            - name: Register to Backstage
-              run: |
-                  curl -X POST http://127.0.0.1:7007/api/catalog/import \
-                    -H "Content-Type: application/json" \
-                    -d '{
-                      "target": "https://github.com/HUIKUB/${{ steps.extract.outputs.SERVICE_NAME }}/blob/main/catalog-info.yaml"
-                    }'
+      - name: Register to Backstage
+        run: |
+          curl -X POST http://127.0.0.1:7007/api/catalog/import \
+            -H "Content-Type: application/json" \
+            -d '{
+              "target": "https://github.com/HUIKUB/${{ steps.extract.outputs.SERVICE_NAME }}/blob/main/catalog-info.yaml"
+            }'
