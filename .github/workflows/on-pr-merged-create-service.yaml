@@ -13,18 +13,15 @@ jobs:
       - name: Checkout PR content
         uses: actions/checkout@v2
 
-      - name: Extract service name from commit message
+      - name: Extract service name
         id: extract
         run: |
           SERVICE_NAME=$(echo "${{ github.event.head_commit.message }}" | sed 's/[^a-zA-Z0-9_-]//g')
           echo "SERVICE_NAME=$SERVICE_NAME" >> $GITHUB_OUTPUT
 
-      - name: Authenticate GitHub CLI (non-interactive)
-        run: |
-          mkdir -p ~/.config/gh
-          echo -e "hosts:\n  github.com:\n    oauth_token: ${{ secrets.GH_PERSONAL_TOKEN }}\n    git_protocol: https" > ~/.config/gh/hosts.yml
-
       - name: Create new service repository
+        env:
+          GH_TOKEN: ${{ secrets.GH_PERSONAL_TOKEN }}
         run: |
           gh repo create HUIKUB/${{ steps.extract.outputs.SERVICE_NAME }} --public --confirm
 
