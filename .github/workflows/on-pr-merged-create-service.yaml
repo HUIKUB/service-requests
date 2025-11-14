@@ -18,6 +18,13 @@ jobs:
         run: |
           SERVICE_NAME=$(echo "${{ github.event.head_commit.message }}" | sed 's/[^a-zA-Z0-9_-]//g')
           echo "SERVICE_NAME=$SERVICE_NAME" >> $GITHUB_OUTPUT
+        
+      - name: Debug GH_TOKEN present
+        run: |
+          if [ -z "$GH_TOKEN" ]; then echo "❌ GH_TOKEN is empty"; exit 1; fi
+          echo "✅ GH_TOKEN is present"
+        env:
+          GH_TOKEN: ${{ secrets.GH_PERSONAL_TOKEN }}
 
       - name: Create new service repository
         run: |
