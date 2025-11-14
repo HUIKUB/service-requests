@@ -20,10 +20,14 @@ jobs:
           echo "SERVICE_NAME=$SERVICE_NAME" >> $GITHUB_OUTPUT
 
       - name: Create new service repository
+        run: |
+          gh repo create HUIKUB/${{ steps.extract.outputs.SERVICE_NAME }} \
+            --public \
+            --description "Service created via Backstage approval flow" \
+            --disable-issues \
+            --disable-wiki
         env:
           GH_TOKEN: ${{ secrets.GH_PERSONAL_TOKEN }}
-        run: |
-          gh repo create HUIKUB/${{ steps.extract.outputs.SERVICE_NAME }} --public --description "Service created via Backstage approval flow" --disable-issues --disable-wiki
 
       - name: Clone and populate new service
         run: |
